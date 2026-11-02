@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#0B0911">
+
+    <!-- Основной контейнер лаунчера -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="20dp">
+
+        <!-- Верхняя шапка -->
+        <LinearLayout
+            android:id="@+id/header_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_frolizon_card"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="14dp">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="FROLIZON ANDROID"
+                android:textColor="#EDE7F6"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/btn_open_mods"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/bg_frolizon_button"
+                android:paddingHorizontal="16dp"
+                android:text="Скачать моды"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF" />
+
+            <Button
+                android:id="@+id/btn_open_controls"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:background="@drawable/bg_frolizon_button"
+                android:paddingHorizontal="16dp"
+                android:text="Управление (.hcfg)"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF" />
+        </LinearLayout>
+
+        <!-- Центральная карточка выбора версии и запуска -->
+        <LinearLayout
+            android:layout_width="360dp"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:background="@drawable/bg_frolizon_card"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="22dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="Выбор версии ядра / игры:"
+                android:textColor="#B39DDB"
+                android:textSize="14sp" />
+
+            <Spinner
+                android:id="@+id/spinner_versions"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginBottom="18dp"
+                android:background="@drawable/bg_frolizon_button"
+                android:paddingHorizontal="12dp"
+                android:popupBackground="#1A1426" />
+
+            <Button
+                android:id="@+id/btn_launch_game"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_frolizon_button"
+                android:text="ЗАПУСТИТЬ FROLIZON"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Нижняя панель со ссылками -->
+        <LinearLayout
+            android:id="@+id/bottom_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_alignParentBottom="true"
+            android:background="@drawable/bg_frolizon_card"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="10dp">
+
+            <Button
+                android:id="@+id/btn_github_original"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:layout_marginEnd="10dp"
+                android:background="@drawable/bg_frolizon_button"
+                android:paddingHorizontal="14dp"
+                android:text="GitHub"
+                android:textAllCaps="false"
+                android:textColor="#D1C4E9" />
+
+            <Button
+                android:id="@+id/btn_github_fork"
+                android:layout_width="wrap_content"
+                android:layout_height="38dp"
+                android:background="@drawable/bg_frolizon_button"
+                android:paddingHorizontal="14dp"
+                android:text="GitHub Fork"
+                android:textAllCaps="false"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_active_cfg"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:text="КФГ: default.hcfg"
+                android:textColor="#9575CD"
+                android:textSize="13sp" />
+        </LinearLayout>
+    </RelativeLayout>
+
+</FrameLayout>
