@@ -16,6 +16,10 @@ on:
         type: boolean
         default: false
 
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   CARGO_TERM_COLOR: always
   CARGO_INCREMENTAL: "0"
@@ -94,7 +98,6 @@ jobs:
           cd "$ANDROID_HOME"
           for d in build-tools/*; do [[ "$(basename "$d")" =~ ^[0-9.]+$ ]] || rm -rf "$d"; done
           for d in ndk/*; do [[ "$(basename "$d")" == "$NDK_VERSION" ]] || rm -rf "$d"; done
-          ls build-tools ndk
 
       - uses: gradle/actions/setup-gradle@v4
         with:
@@ -107,11 +110,20 @@ jobs:
       - name: Unpack prepared data
         run: tar -xzf prepared.tar.gz
 
-      # drawable-файлы лежат в app/src/main/res/drawable, а Gradle берёт ресурсы из packaging/android/res
-      - name: Copy missing drawables
+      # Фиксы исходников лаунчера: без них Gradle не собирается.
+      - name: Patch launcher sources
         run: |
+          # 1. drawable-файлы лежат в app/src/main/res, а Gradle берёт packaging/android/res
           mkdir -p packaging/android/res/drawable
           cp -v app/src/main/res/drawable/*.xml packaging/android/res/drawable/
+
+          # 2. LayoutParams.marginEnd — не поле, нужно setMarginEnd(...)
+          F=packaging/android/java/dev/horizon/android/FrolizonLauncherActivity.java
+          sed -i -E 's/\b([A-Za-z_][A-Za-z0-9_]*)\.marginEnd = (.*);/\1.setMarginEnd(\2);/' "$F"
+          if grep -nE '\.marginEnd\b' "$F"; then
+            echo "::error::marginEnd остался в $F"; exit 1
+          fi
+          grep -n "setMarginEnd" "$F"
 
       - name: Restore signing key (optional)
         env:
@@ -132,6 +144,15 @@ jobs:
             --sdk "$ANDROID_HOME" \
             --java-home "$JAVA_HOME" \
             --gradle "$(command -v gradle)"
+
+      - name: Upload Gradle report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-report-${{ matrix.abi }}
+          path: .local/android/gradle-build/reports
+          if-no-files-found: ignore
+          retention-days: 3
 
       - name: Rename APK
         run: cp .local/android/apk/${{ matrix.abi }}/horizon-android-public.apk horizon-android-${{ inputs.tag }}-${{ matrix.abi }}.apk
