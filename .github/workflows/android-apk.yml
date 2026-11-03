@@ -107,8 +107,12 @@ jobs:
       - name: Unpack prepared data
         run: tar -xzf prepared.tar.gz
 
-      # Если секрет ANDROID_KEYSTORE_BASE64 задан, используется он (обновления поверх старых).
-      # Если нет, скрипт сам создаст одноразовый ключ.
+      # drawable-файлы лежат в app/src/main/res/drawable, а Gradle берёт ресурсы из packaging/android/res
+      - name: Copy missing drawables
+        run: |
+          mkdir -p packaging/android/res/drawable
+          cp -v app/src/main/res/drawable/*.xml packaging/android/res/drawable/
+
       - name: Restore signing key (optional)
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
