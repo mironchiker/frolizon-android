@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Frolizon Android</string>
+
+    <!-- Launcher general -->
+    <string name="launch_button">▶  ЗАПУСТИТЬ</string>
+    <string name="launching">Запуск…</string>
+    <string name="header_title">FROLIZON</string>
+
+    <!-- CFG system -->
+    <string name="cfg_new_dialog_title">Новый конфиг</string>
+    <string name="cfg_new_hint">Название (без расширения)</string>
+    <string name="cfg_delete_confirm">Удалить %s?</string>
+    <string name="cfg_duplicate_suffix">_copy</string>
+    <string name="cfg_edit_title">Редактор: %s</string>
+    <string name="cfg_saved">Конфиг сохранён</string>
+    <string name="cfg_load_error">Ошибка загрузки конфига: %s</string>
+    <string name="cfg_save_error">Ошибка сохранения: %s</string>
+    <string name="cfg_none">Нет конфигов</string>
+
+    <!-- Renderer modes -->
+    <string name="renderer_vulkan">Vulkan / GPU batching</string>
+    <string name="renderer_opengl">OpenGL ES</string>
+    <string name="renderer_compat">Vulkan / совместимость</string>
+
+    <!-- FPS labels -->
+    <string name="fps_system">Системный лимит</string>
+
+    <!-- Performance -->
+    <string name="perf_hints_on">Performance Hints</string>
+    <string name="gpu_profile_on">GPU Profile</string>
+    <string name="record_on">Запись данных</string>
+
+    <!-- GitHub links -->
+    <string name="url_horizon">https://github.com/horizon-rs/horizon</string>
+    <string name="url_fork">https://github.com/frolizon/frolizon-android</string>
+
+    <!-- Status messages -->
+    <string name="status_settings_saved">Настройки сохранены</string>
+    <string name="status_requires_64">Требуется 64-битный APK</string>
+</resources>

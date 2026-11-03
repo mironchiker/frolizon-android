@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Diff-patch for packaging/android/AndroidManifest.xml
+  Add FrolizonLauncherActivity as the default LAUNCHER entry.
+  HorizonActivity stays as it is (not exported, started programmatically).
+  The existing activity-alias "com.google.androidgamesdk.GameActivity" is kept
+  for backward-compat with old shortcuts but its LAUNCHER category is removed
+  so only the new Frolizon UI shows in the app drawer.
+
+  FULL REPLACEMENT of the <application> block — merge with your existing manifest:
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28" />
+    <uses-feature android:name="android.hardware.vulkan.level"
+        android:version="1" android:required="false" />
+    <uses-feature android:glEsVersion="0x00030000" android:required="true" />
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <uses-feature android:name="android.software.leanback" android:required="false" />
+
+    <application
+        android:label="Frolizon"
+        android:appCategory="game"
+        android:icon="@drawable/launcher_icon"
+        android:banner="@drawable/tv_banner"
+        android:extractNativeLibs="true"
+        android:usesCleartextTraffic="false">
+
+        <!-- SAF provider (unchanged) -->
+        <provider
+            android:name="dev.horizon.android.HorizonDocumentsProvider"
+            android:authorities="${applicationId}.documents"
+            android:exported="true"
+            android:grantUriPermissions="true"
+            android:permission="android.permission.MANAGE_DOCUMENTS">
+            <intent-filter>
+                <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
+            </intent-filter>
+        </provider>
+
+        <!--
+          FrolizonLauncherActivity: Java UI entry point.
+          Loads first, writes android-launcher.json, then starts HorizonActivity
+          via explicit Intent when the user taps Launch.
+          Theme: full-screen dark, no action bar.
+        -->
+        <activity
+            android:name="dev.horizon.android.FrolizonLauncherActivity"
+            android:exported="true"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="orientation|screenSize|keyboardHidden|keyboard|density|screenLayout"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/HorizonGameTheme">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+                <category android:name="android.intent.category.LEANBACK_LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+          HorizonActivity: NativeActivity, Rust game loop.
+          Not exported — only FrolizonLauncherActivity starts it.
+        -->
+        <activity
+            android:name="dev.horizon.android.HorizonActivity"
+            android:exported="false"
+            android:screenOrientation="sensorLandscape"
+            android:configChanges="orientation|screenSize|keyboardHidden|keyboard|density|screenLayout"
+            android:windowSoftInputMode="adjustResize"
+            android:theme="@style/HorizonGameTheme">
+            <meta-data
+                android:name="android.app.lib_name"
+                android:value="horizon_android" />
+        </activity>
+
+        <!-- Legacy shortcut alias — no LAUNCHER category so it won't appear in app drawer -->
+        <activity-alias
+            android:name="com.google.androidgamesdk.GameActivity"
+            android:targetActivity="dev.horizon.android.FrolizonLauncherActivity"
+            android:exported="true">
+            <!-- intentionally no LAUNCHER intent-filter -->
+        </activity-alias>
+
+    </application>
+</manifest>

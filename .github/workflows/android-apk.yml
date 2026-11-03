@@ -1,0 +1,161 @@
+name: Build Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Тег релиза (например v0.7.8)"
+        type: string
+        required: true
+      all_abis:
+        description: "Собрать все ABI (arm64-v8a, armeabi-v7a, x86, x86_64)"
+        type: boolean
+        default: false
+      prerelease:
+        description: "Пометить релиз как pre-release"
+        type: boolean
+        default: false
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+  NDK_VERSION: "27.2.12479018"
+  BUILD_TOOLS_VERSION: "35.0.0"
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore prepared engine tables
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: .local/horizon-client
+          key: engine-tables-${{ hashFiles('research-lock.json', 'tools/android_prepare.py') }}
+
+      - name: Prepare engine tables
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: python tools/android_prepare.py
+
+      - name: Pack prepared data
+        run: tar -czf prepared.tar.gz .local/horizon-client
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: prepared-engine-tables
+          path: prepared.tar.gz
+          retention-days: 1
+
+  build:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: ${{ fromJSON(inputs.all_abis && '["arm64-v8a","armeabi-v7a","x86","x86_64"]' || '["arm64-v8a"]') }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Rust
+        run: |
+          rustup show active-toolchain || rustup toolchain install
+          rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: android-${{ matrix.abi }}
+          cache-targets: true
+
+      - name: Install Android SDK / NDK
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platforms;android-35" "build-tools;${BUILD_TOOLS_VERSION}" "ndk;${NDK_VERSION}"
+          cd "$ANDROID_HOME"
+          for d in build-tools/*; do [[ "$(basename "$d")" =~ ^[0-9.]+$ ]] || rm -rf "$d"; done
+          for d in ndk/*; do [[ "$(basename "$d")" == "$NDK_VERSION" ]] || rm -rf "$d"; done
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.14"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: prepared-engine-tables
+
+      - name: Unpack prepared data
+        run: tar -xzf prepared.tar.gz
+
+      # Если секрет ANDROID_KEYSTORE_BASE64 задан, используется он (обновления поверх старых).
+      # Если нет, скрипт сам создаст одноразовый ключ.
+      - name: Restore signing key (optional)
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_B64" ]; then
+            mkdir -p .local/android
+            echo "$KEYSTORE_B64" | base64 -d > .local/android/debug.keystore
+          else
+            echo "::warning::ANDROID_KEYSTORE_BASE64 не задан: APK подписан одноразовым ключом и не обновит ранее установленную версию."
+          fi
+
+      - name: Build APK (${{ matrix.abi }})
+        run: |
+          python tools/android_build.py \
+            --abi "${{ matrix.abi }}" \
+            --public \
+            --sdk "$ANDROID_HOME" \
+            --java-home "$JAVA_HOME" \
+            --gradle "$(command -v gradle)"
+
+      - name: Rename APK
+        run: cp .local/android/apk/${{ matrix.abi }}/horizon-android-public.apk horizon-android-${{ inputs.tag }}-${{ matrix.abi }}.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apk-${{ matrix.abi }}
+          path: horizon-android-${{ inputs.tag }}-${{ matrix.abi }}.apk
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: apk-*
+          path: apks
+          merge-multiple: true
+
+      - name: Checksums
+        working-directory: apks
+        run: sha256sum *.apk > SHA256SUMS.txt
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.tag }}
+          target_commitish: ${{ github.sha }}
+          name: Horizon Android ${{ inputs.tag }}
+          prerelease: ${{ inputs.prerelease }}
+          generate_release_notes: true
+          files: |
+            apks/*.apk
+            apks/SHA256SUMS.txt
