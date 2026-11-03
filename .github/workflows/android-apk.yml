@@ -83,13 +83,18 @@ jobs:
           key: android-${{ matrix.abi }}
           cache-targets: true
 
-      - name: Install Android SDK / NDK
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: ""
+
+      - name: Install Android platform / build-tools / NDK
         run: |
-          yes | sdkmanager --licenses > /dev/null || true
           sdkmanager "platforms;android-35" "build-tools;${BUILD_TOOLS_VERSION}" "ndk;${NDK_VERSION}"
           cd "$ANDROID_HOME"
           for d in build-tools/*; do [[ "$(basename "$d")" =~ ^[0-9.]+$ ]] || rm -rf "$d"; done
           for d in ndk/*; do [[ "$(basename "$d")" == "$NDK_VERSION" ]] || rm -rf "$d"; done
+          ls build-tools ndk
 
       - uses: gradle/actions/setup-gradle@v4
         with:
